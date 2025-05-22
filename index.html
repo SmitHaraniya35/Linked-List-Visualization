@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linked List Visualizer</title>
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --secondary-color: #3b82f6;
+      --success-color: #10b981;
+      --danger-color: #ef4444;
+      --text-color: #1f2937;
+      --light-text: #f9fafb;
+      --background: #f3f4f6;
+      --node-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --transition-speed: 0.5s;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+
+    .container {
+      background-color: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: var(--card-shadow);
+    }
+
+    /* Visualization area */
+    #visualization-container {
+      overflow-x: auto;
+      margin: 2rem 0;
+      padding: 2rem 1rem;
+      min-height: 150px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    #visualization {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100px;
+      padding: 1rem 0;
+    }
+
+    .node {
+      background: var(--primary-color);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      text-align: center;
+      position: relative;
+      min-width: 60px;
+      margin: 0 5px;
+      box-shadow: var(--node-shadow);
+      transition: all var(--transition-speed) ease;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .node.highlight {
+      background-color: var(--success-color);
+      transform: scale(1.1);
+    }
+
+    .node.delete {
+      background-color: var(--danger-color);
+      transform: scale(0.8);
+      opacity: 0;
+    }
+
+    .label {
+      position: absolute;
+      bottom: -25px;
+      left: 0;
+      width: 100%;
+      font-weight: bold;
+      font-size: 0.8rem;
+      color: var(--text-color);
+      text-align: center;
+    }
+
+    .label.hide {
+      visibility: hidden;
+    }
+
+    .arrow {
+      font-size: 1.8rem;
+      user-select: none;
+      transition: all var(--transition-speed) ease;
+      margin: 0 2px;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .arrow.reversed {
+      transform: rotate(180deg);
+      color: var(--danger-color);
+    }
+
+    /* Controls */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .control-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: var(--node-shadow);
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: #4338ca;
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background-color: #2563eb;
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: #dc2626;
+    }
+
+    .btn-success {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background-color: #059669;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    /* Status message */
+    #status {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border-radius: 6px;
+      background-color: #f3f4f6;
+      border-left: 4px solid var(--primary-color);
+      display: none;
+    }
+
+    #status.show {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    #status.success {
+      border-left-color: var(--success-color);
+      background-color: rgba(16, 185, 129, 0.1);
+    }
+
+    #status.error {
+      border-left-color: var(--danger-color);
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes highlight {
+      0% { background-color: var(--primary-color); }
+      50% { background-color: var(--success-color); }
+      100% { background-color: var(--primary-color); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .controls {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Linked List Visualizer</h1>
+    <p class="subtitle">Visualize and interact with a linked list data structure</p>
+  </header>
+
+  <div class="container">
+    <div id="visualization-container">
+      <div id="visualization"></div>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="controls">
+      <div class="control-card">
+        <h2>Insert Operations</h2>
+        <div class="form-group">
+          <label for="insertValue">Value to Insert:</label>
+          <input type="text" id="insertValue" placeholder="Enter a value">
+        </div>
+        
+        <div class="form-group">
+          <label for="insertPosition">Position:</label>
+          <select id="insertPosition">
+            <option value="start">At Beginning</option>
+            <option value="end">At End</option>
+            <option value="index">At Specific Index</option>
+          </select>
+        </div>
+        
+        <div class="form-group" id="insertIndexGroup" style="display: none;">
+          <label for="insertIndex">Index (1-based):</label>
+          <input type="number" id="insertIndex" min="1" placeholder="Enter index">
+        </div>
+        
+        <div class="btn-group">
+          <button id="insertBtn" class="btn-primary btn-full">Insert Node</button>
+        </div>
+      </div>
+
+      <div class="control-card">
+        <h2>Delete Operations</h2>
+        <div class="form-group">
+          <label for="deletePosition">Position:</label>
+          <select id="deletePosition">
+            <option value="start">At Beginning</option>
+            <option value="end">At End</option>
+            <option value="index">At Specific Index</option>
+          </select>
+        </div>
+        
+        <div class="form-group" id="deleteIndexGroup" style="display: none;">
+          <label for="deleteIndex">Index (1-based):</label>
+          <input type="number" id="deleteIndex" min="1" placeholder="Enter index">
+        </div>
+        
+        <div class="btn-group">
+          <button id="deleteBtn" class="btn-danger btn-full">Delete Node</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card" style="margin-top: 2rem;">
+      <h2>Additional Operations</h2>
+      <div class="btn-group">
+        <button id="reverseBtn" class="btn-secondary">Reverse List</button>
+        <button id="resetBtn" class="btn-success">Reset List</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initial list values
+    let values = [];
+    const defaultValues = [...values];
+    
+    // DOM elements
+    const visualization = document.getElementById('visualization');
+    const statusEl = document.getElementById('status');
+    const insertPositionSelect = document.getElementById('insertPosition');
+    const insertIndexGroup = document.getElementById('insertIndexGroup');
+    const deletePositionSelect = document.getElementById('deletePosition');
+    const deleteIndexGroup = document.getElementById('deleteIndexGroup');
+    
+    // References for nodes and arrows
+    const nodeElements = [];
+    const arrowElements = [];
+    
+    // Show/hide index input based on position selection
+    insertPositionSelect.addEventListener('change', function() {
+      insertIndexGroup.style.display = this.value === 'index' ? 'block' : 'none';
+    });
+    
+    deletePositionSelect.addEventListener('change', function() {
+      deleteIndexGroup.style.display = this.value === 'index' ? 'block' : 'none';
+    });
+    
+    // Build linked list visualization
+    function buildList() {
+      // Clear visualization
+      visualization.innerHTML = '';
+      nodeElements.length = 0;
+      arrowElements.length = 0;
+      
+      // Create nodes and arrows
+      for (let i = 0; i < values.length; i++) {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.textContent = values[i];
+        
+        // Add label container
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'label hide';
+        labelDiv.textContent = '';
+        node.appendChild(labelDiv);
+        
+        visualization.appendChild(node);
+        nodeElements.push({ node, labelDiv });
+        
+        // Add arrow if not the last node
+        if (i < values.length - 1) {
+          const arrow = document.createElement('div');
+          arrow.className = 'arrow';
+          arrow.textContent = '→';
+          visualization.appendChild(arrow);
+          arrowElements.push(arrow);
+        }
+      }
+    }
+    
+    // Update labels under nodes to show pointers
+    function updateLabels(prev, curr, next) {
+      // Clear all labels
+      nodeElements.forEach(({ labelDiv }) => {
+        labelDiv.textContent = '';
+        labelDiv.classList.add('hide');
+      });
+      
+      // Set labels for pointers
+      if (prev !== null && prev < nodeElements.length) {
+        nodeElements[prev].labelDiv.textContent = 'prev';
+        nodeElements[prev].labelDiv.classList.remove('hide');
+      }
+      
+      if (curr !== null && curr < nodeElements.length) {
+        if (nodeElements[curr].labelDiv.textContent) {
+          nodeElements[curr].labelDiv.textContent += ', curr';
+        } else {
+          nodeElements[curr].labelDiv.textContent = 'curr';
+        }
+        nodeElements[curr].labelDiv.classList.remove('hide');
+      }
+      
+      if (next !== null && next < nodeElements.length) {
+        if (nodeElements[next].labelDiv.textContent) {
+          nodeElements[next].labelDiv.textContent += ', next';
+        } else {
+          nodeElements[next].labelDiv.textContent = 'next';
+        }
+        nodeElements[next].labelDiv.classList.remove('hide');
+      }
+    }
+    
+    // Helper function for animations
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // Animate arrow reversal
+    async function animateArrowReverse(index) {
+      if (index === null || index >= arrowElements.length) return;
+      
+      const arrow = arrowElements[index];
+      arrow.classList.add('reversed');
+      await sleep(1000);
+    }
+    
+    // Show status message
+    function showStatus(message, type = '') {
+      statusEl.textContent = message;
+      statusEl.className = 'show';
+      
+      if (type) {
+        statusEl.classList.add(type);
+      }
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        statusEl.classList.remove('show');
+      }, 5000);
+    }
+    
+    // Highlight a node
+    async function highlightNode(index) {
+      if (index < 0 || index >= nodeElements.length) return;
+      
+      const node = nodeElements[index].node;
+      node.classList.add('highlight');
+      await sleep(1000);
+      node.classList.remove('highlight');
+    }
+    
+    // Animate node deletion
+    async function animateNodeDeletion(index) {
+      if (index < 0 || index >= nodeElements.length) return;
+      
+      const node = nodeElements[index].node;
+      node.classList.add('delete');
+      await sleep(500);
+    }
+    
+    // Insert node operation
+    async function insertNode() {
+      const valueInput = document.getElementById('insertValue');
+      const value = valueInput.value.trim();
+      
+      if (!value) {
+        showStatus('Please enter a value to insert.', 'error');
+        return;
+      }
+      
+      const position = insertPositionSelect.value;
+      const indexInput = document.getElementById('insertIndex');
+      let index = parseInt(indexInput.value);
+      
+      // Disable buttons during operation
+      document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+      
+      try {
+        if (position === 'start') {
+          // Insert at beginning
+          values.unshift(value);
+          showStatus(`Inserted ${value} at the beginning of the list.`, 'success');
+        } else if (position === 'end') {
+          // Insert at end
+          values.push(value);
+          showStatus(`Inserted ${value} at the end of the list.`, 'success');
+        } else if (position === 'index') {
+          // Insert at specific index
+          if (isNaN(index) || index < 1 || index > values.length + 1) {
+            showStatus(`Invalid index. Please enter a value between 1 and ${values.length + 1}.`, 'error');
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            return;
+          }
+          
+          // Convert to 0-based index
+          index = index - 1;
+          values.splice(index, 0, value);
+          showStatus(`Inserted ${value} at index ${index + 1}.`, 'success');
+        }
+        
+        // Clear input fields
+        valueInput.value = '';
+        indexInput.value = '';
+        
+        // Rebuild and highlight the new node
+        buildList();
+        
+        // Highlight the inserted node
+        if (position === 'start') {
+          await highlightNode(0);
+        } else if (position === 'end') {
+          await highlightNode(values.length - 1);
+        } else if (position === 'index') {
+          await highlightNode(index);
+        }
+      } finally {
+        // Re-enable buttons
+        document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+      }
+    }
+    
+    // Delete node operation
+    async function deleteNode() {
+      if (values.length === 0) {
+        showStatus('The list is empty. Nothing to delete.', 'error');
+        return;
+      }
+      
+      const position = deletePositionSelect.value;
+      const indexInput = document.getElementById('deleteIndex');
+      let index = parseInt(indexInput.value);
+      
+      // Disable buttons during operation
+      document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+      
+      try {
+        if (position === 'start') {
+          // Delete from beginning
+          await highlightNode(0);
+          await animateNodeDeletion(0);
+          values.shift();
+          showStatus('Deleted node from the beginning of the list.', 'success');
+        } else if (position === 'end') {
+          // Delete from end
+          await highlightNode(values.length - 1);
+          await animateNodeDeletion(values.length - 1);
+          values.pop();
+          showStatus('Deleted node from the end of the list.', 'success');
+        } else if (position === 'index') {
+          // Delete at specific index
+          if (isNaN(index) || index < 1 || index > values.length) {
+            showStatus(`Invalid index. Please enter a value between 1 and ${values.length}.`, 'error');
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            return;
+          }
+          
+          // Convert to 0-based index
+          index = index - 1;
+          await highlightNode(index);
+          await animateNodeDeletion(index);
+          values.splice(index, 1);
+          showStatus(`Deleted node at index ${index + 1}.`, 'success');
+        }
+        
+        // Clear input field
+        indexInput.value = '';
+        
+        // Rebuild list
+        buildList();
+      } finally {
+        // Re-enable buttons
+        document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+      }
+    }
+    
+    // Reverse list animation
+    async function reverseAnimation() {
+      if (values.length <= 1) {
+        showStatus('List has at least 2 nodes. Nothing to reverse.', 'error');
+        return;
+      }
+      
+      // Disable buttons during animation
+      document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+      
+      try {
+        let prev = null;
+        let curr = 0;
+        let next = (curr + 1) < values.length ? curr + 1 : null;
+        
+        showStatus('Reversing the linked list...', 'success');
+        
+        while (curr !== null) {
+          // Show current pointers
+          updateLabels(prev, curr, next);
+          await sleep(1000);
+          
+          // Reverse arrow if prev exists
+          if (prev !== null) {
+            await animateArrowReverse(prev);
+          }
+          
+          // Move pointers forward
+          prev = curr;
+          curr = next;
+          next = (curr !== null && (curr + 1) < values.length) ? curr + 1 : null;
+          
+          // Update labels for new positions
+          updateLabels(prev, curr, next);
+          await sleep(1000);
+        }
+        
+        // Final state: only prev remains
+        updateLabels(prev, null, null);
+        
+        // Reverse the values array
+        values.reverse();
+        
+        // Rebuild the list with reversed values
+        await sleep(1000);
+        buildList();
+        
+        showStatus('List successfully reversed!', 'success');
+      } finally {
+        // Re-enable buttons
+        document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+      }
+    }
+    
+    // Reset list to default values
+    function resetList() {
+      values = [...defaultValues];
+      buildList();
+      showStatus('List reset to default values.', 'success');
+    }
+    
+    // Event listeners
+    document.getElementById('insertBtn').addEventListener('click', insertNode);
+    document.getElementById('deleteBtn').addEventListener('click', deleteNode);
+    document.getElementById('reverseBtn').addEventListener('click', reverseAnimation);
+    document.getElementById('resetBtn').addEventListener('click', resetList);
+    
+    // Initialize the list
+    buildList();
+  </script>
+</body>
+</html>
+
